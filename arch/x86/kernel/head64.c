@@ -151,8 +151,8 @@ unsigned long __head __startup_64(unsigned long physaddr,
 
 	pgd = fixup_pointer(&early_top_pgt, physaddr);
 	p = pgd + pgd_index(__START_KERNEL_map);
-	if (la57)
 	#ifdef CONFIG_X86_5LEVEL
+	if (la57)
 		*p = (unsigned long)level4_kernel_pgt;
 	else
 		#endif
