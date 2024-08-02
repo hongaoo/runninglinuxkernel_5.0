@@ -152,14 +152,18 @@ unsigned long __head __startup_64(unsigned long physaddr,
 	pgd = fixup_pointer(&early_top_pgt, physaddr);
 	p = pgd + pgd_index(__START_KERNEL_map);
 	if (la57)
+	#ifdef CONFIG_X86_5LEVEL
 		*p = (unsigned long)level4_kernel_pgt;
 	else
+		#endif
 		*p = (unsigned long)level3_kernel_pgt;
 	*p += _PAGE_TABLE_NOENC - __START_KERNEL_map + load_delta;
 
 	if (la57) {
+		#ifdef CONFIG_X86_5LEVEL
 		p4d = fixup_pointer(&level4_kernel_pgt, physaddr);
 		p4d[511] += load_delta;
+		#endif
 	}
 
 	pud = fixup_pointer(&level3_kernel_pgt, physaddr);
