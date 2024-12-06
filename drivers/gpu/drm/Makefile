@@ -22,6 +22,7 @@ drm-y       :=	drm_auth.o drm_bufs.o drm_cache.o \
 		drm_atomic_uapi.o
 
 drm-$(CONFIG_DRM_LIB_RANDOM) += lib/drm_random.o
+drm-y += lib/libbmp.o lib/libpgm.o
 drm-$(CONFIG_DRM_VM) += drm_vm.o
 drm-$(CONFIG_COMPAT) += drm_ioc32.o
 drm-$(CONFIG_DRM_GEM_CMA_HELPER) += drm_gem_cma_helper.o

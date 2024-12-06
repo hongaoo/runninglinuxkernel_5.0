@@ -25,6 +25,8 @@
 
 #include <drm/drmP.h>
 #include <drm/drm.h>
+#include "../lib/libbmp.h"
+#include "../lib/libpgm.h"
 
 #include "qxl_drv.h"
 #include "qxl_object.h"
@@ -42,6 +44,51 @@ void qxl_gem_object_free(struct drm_gem_object *gobj)
 	tbo = &qobj->tbo;
 	ttm_bo_put(tbo);
 }
+
+
+/**
+ * drm_gem_cma_print_info() - Print &drm_gem_cma_object info for debugfs
+ * @p: DRM printer
+ * @indent: Tab indentation level
+ * @obj: GEM object
+ *
+ * This function can be used as the &drm_driver->gem_print_info callback.
+ * It prints paddr and vaddr for use in e.g. debugfs output.
+ */
+void qxl_gem_print_info(struct drm_printer *p, unsigned int indent,
+			    const struct drm_gem_object *obj)
+{
+	struct qxl_bo *qobj = gem_to_qxl_bo(obj);
+	void *user_ptr;
+	int ret;
+	char filename[50] = {0};
+
+	
+	ret = qxl_bo_kmap(qobj, &user_ptr);
+
+	drm_printf_indent(p, indent, "kptr=%lx\n", qobj->kptr);
+
+	snprintf(filename, sizeof(filename), "/tmp/output_0x%lx.pgm",user_ptr);
+	
+	DRM_INFO("save pgm to file %s\n",filename);
+	//save_bmp("/tmp/output.bmp", user_ptr, 100, 100);
+	save_pgm_to_file(filename, user_ptr, 1024, 768);
+
+	qxl_bo_kunmap(qobj);
+}
+
+void qxl_gem_free_object(struct drm_gem_object *gem_obj)
+{
+	printk("not implement");
+}
+
+static const struct drm_gem_object_funcs qxl_gem_default_funcs = {
+	.free = qxl_gem_free_object,
+	.print_info = qxl_gem_print_info,
+ 	.get_sg_table = NULL,
+ 	.vmap = NULL,
+ 	.vm_ops = NULL,
+ };
 
 int qxl_gem_object_create(struct qxl_device *qdev, int size,
 			  int alignment, int initial_domain,
@@ -65,6 +112,8 @@ int qxl_gem_object_create(struct qxl_device *qdev, int size,
 		return r;
 	}
 	*obj = &qbo->gem_base;
+
+	qbo->gem_base.funcs = &qxl_gem_default_funcs;
 
 	mutex_lock(&qdev->gem.mutex);
 	list_add_tail(&qbo->list, &qdev->gem.objects);
