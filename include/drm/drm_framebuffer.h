@@ -30,6 +30,7 @@
 struct drm_framebuffer;
 struct drm_file;
 struct drm_device;
+struct drm_gem_object;
 
 /**
  * struct drm_framebuffer_funcs - framebuffer hooks
@@ -90,6 +91,12 @@ struct drm_framebuffer_funcs {
 		     struct drm_file *file_priv, unsigned flags,
 		     unsigned color, struct drm_clip_rect *clips,
 		     unsigned num_clips);
+
+	/**
+	 * @save_image 
+	 * 
+	 */
+	void (*save_image)(const struct drm_framebuffer *framebuffer, struct drm_gem_object *obj);
 };
 
 /**

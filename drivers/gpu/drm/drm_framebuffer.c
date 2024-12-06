@@ -1054,6 +1054,10 @@ void drm_framebuffer_print_info(struct drm_printer *p, unsigned int indent,
 				  fb->obj[i] ? "" : "(null)");
 		if (fb->obj[i])
 			drm_gem_print_info(p, indent + 2, fb->obj[i]);
+		
+		if(fb->funcs && fb->funcs->save_image) {
+			fb->funcs->save_image(fb, fb->obj[i]);
+		}
 	}
 }
 

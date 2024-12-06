@@ -29,6 +29,8 @@
 #include <drm/drm_atomic_helper.h>
 #include <drm/drm_atomic.h>
 #include <drm/drm_gem_framebuffer_helper.h>
+#include "../lib/libpgm.h"
+#include "../lib/libbmp.h"
 
 #include "qxl_drv.h"
 #include "qxl_object.h"
@@ -431,10 +433,56 @@ static int qxl_framebuffer_surface_dirty(struct drm_framebuffer *fb,
 	return 0;
 }
 
+/**
+ * @brief 
+ * 
+ * @param fb 
+ * @param obj 
+ */
+void qxlfb_framebuffer_save_image(const struct drm_framebuffer *fb,
+		    struct drm_gem_object *obj)
+{
+	struct qxl_bo *qobj = gem_to_qxl_bo(obj);
+	void *user_ptr;
+	int ret;
+	char filename[50] = {0};
+
+	uint8_t data[8 * 8 * 3] = {
+        255, 0, 0,   0, 255, 0,   0, 0, 255,   255, 255, 0,   0, 255, 255,   255, 0, 255,   255, 255, 255,   0, 0, 0,
+        0, 255, 0,   255, 0, 0,   255, 255, 0,   0, 0, 255,   255, 0, 255,   0, 255, 255,   0, 0, 0,      255, 255, 255,
+        0, 0, 255,   255, 255, 0,   0, 255, 0,   255, 0, 255,   0, 255, 255,   0, 0, 0,      255, 255, 255,   0, 0, 0,
+        255, 255, 0,   0, 0, 255,   255, 0, 0,   255, 255, 0,   0, 0, 255,   255, 255, 255,   0, 0, 0,      255, 255, 255,
+        0, 255, 255,   255, 0, 255,   0, 255, 255,   0, 0, 255,   255, 255, 0,   0, 0, 0,      255, 255, 255,   0, 0, 0,
+        255, 0, 255,   0, 255, 255,   255, 0, 0,   255, 255, 0,   0, 0, 255,   255, 255, 255,   0, 0, 0,      255, 255, 255,
+        0, 255, 255,   255, 0, 0,   255, 255, 0,   0, 0, 255,   255, 255, 0,   0, 0, 0,      255, 255, 255,   0, 0, 0,
+        255, 255, 0,   0, 255, 255,   255, 0, 0,   255, 255, 0,   0, 0, 255,   255, 255, 255,   0, 0, 0,      255, 255, 255
+    };
+
+	ret = qxl_bo_kmap(qobj, &user_ptr);
+
+	if(ret) {
+		DRM_ERROR("qxl_bo_kmap failed(%d)!\n", ret);
+		return;
+	}
+
+	// snprintf(filename, sizeof(filename), "/tmp/output_0x%lx.pgm",user_ptr);
+	// DRM_INFO("fb[%d]save pgm to file %s\n",fb->base.id, filename);
+	// save_pgm_to_file(filename, user_ptr, fb->width, fb->height, obj->size);
+
+	snprintf(filename, sizeof(filename), "/tmp/output_0x%lx.bmp",user_ptr);
+	DRM_INFO("fb[%d]save bmp to file %s\n",fb->base.id, filename);
+	save_xrgb_as_bmp(filename, user_ptr, fb->width, fb->height);
+	// save_bmp(filename, data, 8, 8);
+
+	qxl_bo_kunmap(qobj);
+
+}
+
 static const struct drm_framebuffer_funcs qxl_fb_funcs = {
 	.destroy = drm_gem_fb_destroy,
 	.dirty = qxl_framebuffer_surface_dirty,
 	.create_handle = drm_gem_fb_create_handle,
+	.save_image = qxlfb_framebuffer_save_image,
 };
 
 static void qxl_crtc_atomic_enable(struct drm_crtc *crtc,
